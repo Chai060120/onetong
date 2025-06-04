@@ -1,0 +1,1050 @@
+<p>你好，这里是柴小柴的频道</p>
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>哲学八问决策模拟器</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      background: white;
+      margin: 50px auto;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #1e293b;
+      font-size: 26px;
+      margin-bottom: 20px;
+    }
+    .scenario, .context, .explanation {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8fafc;
+      border-left: 4px solid #6366f1;
+      border-radius: 8px;
+    }
+    .choices {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    button.choice, .nav-button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button.choice:hover, .nav-button:hover {
+      background: #2563eb;
+    }
+    .quote, .result {
+      margin-top: 30px;
+      background: #f0fdf4;
+      border-left: 5px solid #10b981;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+    }
+    .hidden {
+      display: none;
+    }
+    canvas {
+      max-width: 100%;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="title">哲学八问决策模拟器</h1>
+    <div class="scenario" id="scenarioText"></div>
+    <div class="context hidden" id="contextBox"></div>
+    <div class="choices" id="choices"></div>
+    <div class="quote hidden" id="quoteBox"></div>
+    <div class="explanation hidden" id="explanationBox"></div>
+    <div class="nav-buttons">
+      <button class="nav-button" onclick="prevQuestion()">⬅ 上一题</button>
+      <button class="nav-button" onclick="nextQuestion()">下一题 ➡</button>
+    </div>
+    <div class="result hidden" id="resultBox">
+      <h2>你的哲学倾向结果</h2>
+      <canvas id="philosophyChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      // 功利主义 utilitarian 5题
+  {
+    title: "问题1",
+    text: "为了多数人的幸福，是否可以牺牲少数人的利益？",
+    context: "功利主义强调最大化整体幸福。",
+    options: [
+      {
+        text: "是，可以。",
+        type: "utilitarian",
+        quote: "最大多数人的最大幸福。",
+        typeName: "功利主义",
+        explanation: "强调通过牺牲少数利益来实现大多数人的最大幸福。"
+      },
+      {
+        text: "否，不能牺牲少数。",
+        type: "kantian",
+        quote: "尊重每一个个体。",
+        typeName: "康德主义",
+        explanation: "强调尊重每个个体的权利，不能为多数牺牲少数。"
+      }
+    ]
+  },
+  {
+    title: "问题2",
+    text: "在资源分配上，是否优先考虑效益最大化？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "utilitarian",
+        quote: "效率优先，有助于整体福祉。",
+        typeName: "功利主义",
+        explanation: "强调优先考虑资源的效率和整体福祉的最大化。"
+      },
+      {
+        text: "否，应考虑公平。",
+        type: "rawlsian",
+        quote: "正义即公平。",
+        typeName: "罗尔斯主义",
+        explanation: "主张资源分配应以公平和正义为基础。"
+      }
+    ]
+  },
+  {
+    title: "问题3",
+    text: "谎言若能带来善果，是否可接受？",
+    context: "",
+    options: [
+      {
+        text: "可以。",
+        type: "utilitarian",
+        quote: "善意的谎言也是爱。",
+        typeName: "功利主义",
+        explanation: "认为如果谎言能带来善果，则可以被接受。"
+      },
+      {
+        text: "不可以。",
+        type: "kantian",
+        quote: "说谎总是不对的。",
+        typeName: "康德主义",
+        explanation: "认为说谎本质上是错误的，不能因结果而改变。"
+      }
+    ]
+  },
+  {
+    title: "问题4",
+    text: "是否支持利用科技手段最大化社会福利？",
+    context: "",
+    options: [
+      {
+        text: "支持。",
+        type: "utilitarian",
+        quote: "预防胜于治疗。",
+        typeName: "功利主义",
+        explanation: "支持通过科技手段预防问题，从而提升整体福利。"
+      },
+      {
+        text: "反对，侵犯自由。",
+        type: "kantian",
+        quote: "自由是不可侵犯的。",
+        typeName: "康德主义",
+        explanation: "强调自由是基本权利，不能被侵犯。"
+      }
+    ]
+  },
+  {
+    title: "问题5",
+    text: "资源有限时，是否应优先支持多数人的需求？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "utilitarian",
+        quote: "最大幸福原则。",
+        typeName: "功利主义",
+        explanation: "主张优先满足多数人的需求以实现最大幸福。"
+      },
+      {
+        text: "否，应保障弱势。",
+        type: "rawlsian",
+        quote: "照顾最弱者。",
+        typeName: "罗尔斯主义",
+        explanation: "强调应优先照顾社会中最弱势的群体。"
+      }
+    ]
+  },
+      // 康德主义 kantian 5题
+  {
+    title: "问题6",
+    text: "人是否应被当作目的，而非手段？",
+    context: "康德伦理强调尊重个体。",
+    options: [
+      {
+        text: "是的，必须尊重个体。",
+        type: "kantian",
+        quote: "人不能只是手段。",
+        typeName: "康德主义",
+        explanation: "强调每个人都应被视为目的，不能被当作手段使用。"
+      },
+      {
+        text: "不一定，有时可为整体牺牲。",
+        type: "utilitarian",
+        quote: "最大幸福。",
+        typeName: "功利主义",
+        explanation: "强调以最大幸福为目标，个体利益可被整体利益牺牲。"
+      }
+    ]
+  },
+  {
+    title: "问题7",
+    text: "是否应严格遵守诚实原则？",
+    context: "",
+    options: [
+      {
+        text: "是，诚实是美德。",
+        type: "kantian",
+        quote: "说谎总是不对。",
+        typeName: "康德主义",
+        explanation: "认为说谎本质上是错误的，诚实是不可动摇的道德原则。"
+      },
+      {
+        text: "不，善意谎言可接受。",
+        type: "utilitarian",
+        quote: "善意的谎言。",
+        typeName: "功利主义",
+        explanation: "如果谎言能带来善果，则认为可以接受。"
+      }
+    ]
+  },
+  {
+    title: "问题8",
+    text: "是否反对以预防为由侵犯自由？",
+    context: "",
+    options: [
+      {
+        text: "反对。",
+        type: "kantian",
+        quote: "自由权不可剥夺。",
+        typeName: "康德主义",
+        explanation: "自由权是不可侵犯的基本权利，不能被以预防为由剥夺。"
+      },
+      {
+        text: "支持。",
+        type: "utilitarian",
+        quote: "预防胜于治疗。",
+        typeName: "功利主义",
+        explanation: "支持通过预防手段以最大化整体福利，即使可能限制自由。"
+      }
+    ]
+  },
+  {
+    title: "问题9",
+    text: "是否应尊重所有人类，无论国籍？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "kantian",
+        quote: "人人平等。",
+        typeName: "康德主义",
+        explanation: "强调所有人类在道德上是平等的，应被平等尊重。"
+      },
+      {
+        text: "否，应优先本国人。",
+        type: "virtue",
+        quote: "忠诚是美德。",
+        typeName: "德性伦理学",
+        explanation: "强调对国家或团体的忠诚是一种美德，优先考虑本国利益。"
+      }
+    ]
+  },
+  {
+    title: "问题10",
+    text: "你是否认为规则应被无条件遵守？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "kantian",
+        quote: "道德法则不可违背。",
+        typeName: "康德主义",
+        explanation: "认为道德法则是绝对的，应当无条件遵守。"
+      },
+      {
+        text: "否，应考虑情境。",
+        type: "existential",
+        quote: "自由选择。",
+        typeName: "存在主义",
+        explanation: "主张根据具体情境进行自由选择，不盲目遵守规则。"
+      }
+    ]
+  },
+
+     // 罗尔斯主义 rawlsian 5题
+  {
+    title: "问题11",
+    text: "是否应保障最弱者的利益？",
+    context: "罗尔斯正义理论的核心。",
+    options: [
+      {
+        text: "是。",
+        type: "rawlsian",
+        quote: "正义即公平。",
+        typeName: "罗尔斯主义",
+        explanation: "强调社会应保障最弱势群体的利益，实现公平正义。"
+      },
+      {
+        text: "否，效率优先。",
+        type: "utilitarian",
+        quote: "最大幸福。",
+        typeName: "功利主义",
+        explanation: "优先考虑效率和整体幸福，而非特殊保障弱势。"
+      }
+    ]
+  },
+  {
+    title: "问题12",
+    text: "是否支持无知之幕下的公正制度？",
+    context: "",
+    options: [
+      {
+        text: "支持。",
+        type: "rawlsian",
+        quote: "无知之幕。",
+        typeName: "罗尔斯主义",
+        explanation: "支持在无知之幕下设计公平公正的社会制度。"
+      },
+      {
+        text: "不支持。",
+        type: "utilitarian",
+        quote: "效益优先。",
+        typeName: "功利主义",
+        explanation: "优先考虑整体效益而非制度公平性。"
+      }
+    ]
+  },
+  {
+    title: "问题13",
+    text: "资源分配应注重公平还是效率？",
+    context: "",
+    options: [
+      {
+        text: "公平。",
+        type: "rawlsian",
+        quote: "公平优先。",
+        typeName: "罗尔斯主义",
+        explanation: "主张资源分配应以公平为先，保障社会正义。"
+      },
+      {
+        text: "效率。",
+        type: "utilitarian",
+        quote: "整体幸福。",
+        typeName: "功利主义",
+        explanation: "强调通过效率提升整体幸福水平。"
+      }
+    ]
+  },
+  {
+    title: "问题14",
+    text: "社会契约是否是公正的基础？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "rawlsian",
+        quote: "契约正义。",
+        typeName: "罗尔斯主义",
+        explanation: "认为社会契约是构建公正社会的基础。"
+      },
+      {
+        text: "不是。",
+        type: "existential",
+        quote: "个体自由。",
+        typeName: "存在主义",
+        explanation: "强调个体自由优先，不依赖社会契约。"
+      }
+    ]
+  },
+  {
+    title: "问题15",
+    text: "贫富差距应如何调节？",
+    context: "",
+    options: [
+      {
+        text: "通过制度保障公平。",
+        type: "rawlsian",
+        quote: "差别原则。",
+        typeName: "罗尔斯主义",
+        explanation: "通过差别原则调节贫富差距，保障公平。"
+      },
+      {
+        text: "由市场决定。",
+        type: "utilitarian",
+        quote: "效率优先。",
+        typeName: "功利主义",
+        explanation: "强调市场机制优先，追求效率最大化。"
+      }
+    ]
+  },
+
+      // 存在主义 existential 5题
+  {
+    title: "问题16",
+    text: "人生的意义是否由自己赋予？",
+    context: "存在主义强调自我选择。",
+    options: [
+      {
+        text: "是。",
+        type: "existential",
+        quote: "存在先于本质。",
+        typeName: "存在主义",
+        explanation: "认为人生的意义不是先验的，而是由个人自主赋予的。"
+      },
+      {
+        text: "否，意义客观存在。",
+        type: "optimist",
+        quote: "历史必然。",
+        typeName: "乐观主义",
+        explanation: "认为人生意义是客观存在，由历史和必然性决定。"
+      }
+    ]
+  },
+  {
+    title: "问题17",
+    text: "你是否相信人类有自由意志？",
+    context: "",
+    options: [
+      {
+        text: "相信。",
+        type: "existential",
+        quote: "人是注定自由的。",
+        typeName: "存在主义",
+        explanation: "主张人类天生拥有自由意志和选择的能力。"
+      },
+      {
+        text: "不信。",
+        type: "optimist",
+        quote: "科学决定论。",
+        typeName: "乐观主义",
+        explanation: "认为人类行为由科学规律决定，无真正自由意志。"
+      }
+    ]
+  },
+  {
+    title: "问题18",
+    text: "面对欺骗你，会选择离开吗？",
+    context: "",
+    options: [
+      {
+        text: "会。",
+        type: "virtue",
+        quote: "坚持诚实。",
+        typeName: "德性伦理学",
+        explanation: "强调诚实和正直，选择远离欺骗。"
+      },
+      {
+        text: "不会，爱赋予意义。",
+        type: "existential",
+        quote: "自由选择。",
+        typeName: "存在主义",
+        explanation: "认为个人通过自由选择赋予生活意义，包容爱与欺骗。"
+      }
+    ]
+  },
+  {
+    title: "问题19",
+    text: "人生是否本质无意义？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "existential",
+        quote: "虚无主义。",
+        typeName: "存在主义",
+        explanation: "认为人生本质上没有预设的意义，强调个体创造意义。"
+      },
+      {
+        text: "否。",
+        type: "optimist",
+        quote: "历史进步。",
+        typeName: "乐观主义",
+        explanation: "相信人生有意义，且随历史进步不断彰显。"
+      }
+    ]
+  },
+  {
+    title: "问题20",
+    text: "是否每个人应定义自己的价值？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "existential",
+        quote: "自由定义自己。",
+        typeName: "存在主义",
+        explanation: "强调每个人都有权自主定义自身的价值和人生方向。"
+      },
+      {
+        text: "否，应遵循普遍道德。",
+        type: "kantian",
+        quote: "普遍法则。",
+        typeName: "康德主义",
+        explanation: "认为应遵守普遍适用的道德法则，而非完全自由定义。"
+      }
+    ]
+  },
+
+      // 女性主义 feminist 5题
+  {
+    title: "问题21",
+    text: "是否认为环境影响个人道德？",
+    context: "女性主义强调情境与关系。",
+    options: [
+      {
+        text: "是。",
+        type: "feminist",
+        quote: "理解处境。",
+        typeName: "女性主义",
+        explanation: "认为个人道德行为深受其社会和环境背景影响。"
+      },
+      {
+        text: "否，行为独立于环境。",
+        type: "virtue",
+        quote: "美德自足。",
+        typeName: "德性伦理学",
+        explanation: "强调行为和美德独立于外部环境。"
+      }
+    ]
+  },
+  {
+    title: "问题22",
+    text: "贫困母亲偷窃是否应被谴责？",
+    context: "",
+    options: [
+      {
+        text: "不应。",
+        type: "feminist",
+        quote: "环境决定行为。",
+        typeName: "女性主义",
+        explanation: "认为应考虑社会和经济环境对行为的影响，减少谴责。"
+      },
+      {
+        text: "应。",
+        type: "virtue",
+        quote: "诚信重要。",
+        typeName: "德性伦理学",
+        explanation: "强调诚信作为重要美德，应谴责偷窃行为。"
+      }
+    ]
+  },
+  {
+    title: "问题23",
+    text: "性别平等是否是社会正义的一部分？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "feminist",
+        quote: "平等权利。",
+        typeName: "女性主义",
+        explanation: "强调性别平等是实现社会正义的关键。"
+      },
+      {
+        text: "否。",
+        type: "rawlsian",
+        quote: "公平优先。",
+        typeName: "罗尔斯主义",
+        explanation: "关注整体社会公平，可能优先考虑其他公平原则。"
+      }
+    ]
+  },
+  {
+    title: "问题24",
+    text: "是否支持女性自主选择人生道路？",
+    context: "",
+    options: [
+      {
+        text: "支持。",
+        type: "feminist",
+        quote: "自主权。",
+        typeName: "女性主义",
+        explanation: "强调女性应有权自主决定自己的人生方向。"
+      },
+      {
+        text: "反对。",
+        type: "kantian",
+        quote: "遵循道德法则。",
+        typeName: "康德主义",
+        explanation: "强调道德法则优先，可能限制个人自由选择。"
+      }
+    ]
+  },
+  {
+    title: "问题25",
+    text: "社会是否应更多关注弱势群体？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "feminist",
+        quote: "关注弱势。",
+        typeName: "女性主义",
+        explanation: "主张社会应特别关注并支持弱势群体。"
+      },
+      {
+        text: "否。",
+        type: "utilitarian",
+        quote: "最大效益。",
+        typeName: "功利主义",
+        explanation: "强调追求最大整体效益，可能忽视个别弱势。"
+      }
+    ]
+  },
+
+      // 美德伦理 virtue 5题
+  {
+    title: "问题26",
+    text: "你是否认为应追求卓越人格？",
+    context: "美德伦理强调品格培养。",
+    options: [
+      {
+        text: "是。",
+        type: "virtue",
+        quote: "美德造就幸福。",
+        typeName: "美德伦理学",
+        explanation: "认为通过培养美德可以实现真正的幸福和卓越人格。"
+      },
+      {
+        text: "否。",
+        type: "existential",
+        quote: "自定义价值。",
+        typeName: "存在主义",
+        explanation: "强调个体自由定义自身价值，强调个人选择。"
+      }
+    ]
+  },
+  {
+    title: "问题27",
+    text: "诚实是否是最重要的美德？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "virtue",
+        quote: "坚持诚实。",
+        typeName: "美德伦理学",
+        explanation: "认为诚实是美德的核心，是品格的重要组成。"
+      },
+      {
+        text: "否。",
+        type: "utilitarian",
+        quote: "善意为先。",
+        typeName: "功利主义",
+        explanation: "更看重行为带来的善果，善意比诚实更重要。"
+      }
+    ]
+  },
+  {
+    title: "问题28",
+    text: "是否应优先照顾忠诚的同胞？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "virtue",
+        quote: "忠诚是美德。",
+        typeName: "美德伦理学",
+        explanation: "认为忠诚是重要的美德，应优先照顾忠诚者。"
+      },
+      {
+        text: "否，应普遍关怀。",
+        type: "kantian",
+        quote: "人人平等。",
+        typeName: "康德主义",
+        explanation: "强调普遍平等与尊重，反对偏私。"
+      }
+    ]
+  },
+  {
+    title: "问题29",
+    text: "贫困母亲偷窃行为应否谴责？",
+    context: "",
+    options: [
+      {
+        text: "应谴责。",
+        type: "virtue",
+        quote: "诚信为本。",
+        typeName: "美德伦理学",
+        explanation: "诚信是美德基础，偷窃应被谴责。"
+      },
+      {
+        text: "不应谴责。",
+        type: "feminist",
+        quote: "理解处境。",
+        typeName: "女性主义",
+        explanation: "强调理解环境和情境，减少谴责。"
+      }
+    ]
+  },
+  {
+    title: "问题30",
+    text: "是否认为幸福源于美德？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "virtue",
+        quote: "幸福来自美德。",
+        typeName: "美德伦理学",
+        explanation: "认为美德是获得幸福的根本途径。"
+      },
+      {
+        text: "否。",
+        type: "pessimist",
+        quote: "人生即苦。",
+        typeName: "悲观主义",
+        explanation: "认为人生充满苦难，幸福难以获得。"
+      }
+    ]
+  },
+
+      // 悲观主义 pessimist 5题
+  {
+    title: "问题31",
+    text: "你是否认为世界本质是痛苦？",
+    context: "悲观主义视角。",
+    options: [
+      {
+        text: "是。",
+        type: "pessimist",
+        quote: "人生即苦。",
+        typeName: "悲观主义",
+        explanation: "认为人生充满痛苦与苦难，是世界的本质。"
+      },
+      {
+        text: "否。",
+        type: "optimist",
+        quote: "历史进步。",
+        typeName: "乐观主义",
+        explanation: "相信历史和世界会不断进步和改善。"
+      }
+    ]
+  },
+  {
+    title: "问题32",
+    text: "你是否认为人类行为难以彻底理解？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "pessimist",
+        quote: "复杂不可知。",
+        typeName: "悲观主义",
+        explanation: "认为人类行为复杂且难以完全被理解和预测。"
+      },
+      {
+        text: "否。",
+        type: "optimist",
+        quote: "科学终将解释。",
+        typeName: "乐观主义",
+        explanation: "相信科学能够最终解释和理解人类行为。"
+      }
+    ]
+  },
+  {
+    title: "问题33",
+    text: "是否相信未来不会变好？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "pessimist",
+        quote: "世界无望。",
+        typeName: "悲观主义",
+        explanation: "对未来持悲观态度，认为世界无望改善。"
+      },
+      {
+        text: "否。",
+        type: "optimist",
+        quote: "人类会进步。",
+        typeName: "乐观主义",
+        explanation: "相信人类社会会不断进步和改善未来。"
+      }
+    ]
+  },
+  {
+    title: "问题34",
+    text: "面对欺骗，你会选择离开吗？",
+    context: "",
+    options: [
+      {
+        text: "会。",
+        type: "virtue",
+        quote: "坚持诚信。",
+        typeName: "美德伦理学",
+        explanation: "强调诚信和正直，选择离开欺骗者。"
+      },
+      {
+        text: "不会。",
+        type: "pessimist",
+        quote: "无望中坚持。",
+        typeName: "悲观主义",
+        explanation: "尽管世界无望，仍坚持某种态度或关系。"
+      }
+    ]
+  },
+  {
+    title: "问题35",
+    text: "幸福是否难以实现？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "pessimist",
+        quote: "苦难常在。",
+        typeName: "悲观主义",
+        explanation: "认为苦难普遍存在，幸福难以真正获得。"
+      },
+      {
+        text: "否。",
+        type: "optimist",
+        quote: "幸福可达。",
+        typeName: "乐观主义",
+        explanation: "相信幸福是可以达到和实现的。"
+      }
+    ]
+  },
+
+      // 享乐主义 optimist 5题
+  {
+    title: "问题36",
+    text: "你是否相信人类社会会持续进步？",
+    context: "享乐主义和乐观主义视角。",
+    options: [
+      {
+        text: "是。",
+        type: "optimist",
+        quote: "历史的长弧向着正义弯曲。",
+        typeName: "乐观主义",
+        explanation: "相信历史和社会会不断向着更正义和美好发展。"
+      },
+      {
+        text: "否。",
+        type: "pessimist",
+        quote: "人生即苦。",
+        typeName: "悲观主义",
+        explanation: "认为人生充满痛苦和苦难，进步不可期。"
+      }
+    ]
+  },
+  {
+    title: "问题37",
+    text: "你是否相信科学能解释一切？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "optimist",
+        quote: "科学终将揭示真理。",
+        typeName: "乐观主义",
+        explanation: "相信科学最终能解释自然和社会现象的真理。"
+      },
+      {
+        text: "否。",
+        type: "existential",
+        quote: "人类自由不可限量。",
+        typeName: "存在主义",
+        explanation: "强调人类的自由意志和选择超越科学解释范围。"
+      }
+    ]
+  },
+  {
+    title: "问题38",
+    text: "你是否认为幸福是生活的主要目标？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "optimist",
+        quote: "追求快乐与幸福。",
+        typeName: "乐观主义",
+        explanation: "认为追求快乐和幸福是生活的核心目的。"
+      },
+      {
+        text: "否。",
+        type: "existential",
+        quote: "自由选择意义。",
+        typeName: "存在主义",
+        explanation: "主张每个人自由定义生活意义，不限于幸福。"
+      }
+    ]
+  },
+  {
+    title: "问题39",
+    text: "你是否相信未来会比现在更好？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "optimist",
+        quote: "进步是必然。",
+        typeName: "乐观主义",
+        explanation: "坚信未来必然比现在更进步和美好。"
+      },
+      {
+        text: "否。",
+        type: "pessimist",
+        quote: "未来无望。",
+        typeName: "悲观主义",
+        explanation: "认为未来没有希望，将继续充满痛苦。"
+      }
+    ]
+  },
+  {
+    title: "问题40",
+    text: "你是否认为生活值得庆祝？",
+    context: "",
+    options: [
+      {
+        text: "是。",
+        type: "optimist",
+        quote: "生命的礼赞。",
+        typeName: "乐观主义",
+        explanation: "认为生命本身值得赞美和庆祝。"
+      },
+      {
+        text: "否。",
+        type: "pessimist",
+        quote: "无望之中。",
+        typeName: "悲观主义",
+        explanation: "感到生活无望，不值得庆祝。"
+      }
+    ]
+  }
+];
+
+    let currentQuestion = 0;
+    const totalQuestions = questions.length;
+    const scores = {
+      utilitarian: 0,
+      kantian: 0,
+      rawlsian: 0,
+      existential: 0,
+      feminist: 0,
+      virtue: 0,
+      pessimist: 0,
+      optimist: 0
+    };
+
+    const scenarioBox = document.getElementById("scenarioText");
+    const contextBox = document.getElementById("contextBox");
+    const choicesBox = document.getElementById("choices");
+    const quoteBox = document.getElementById("quoteBox");
+    const explanationBox = document.getElementById("explanationBox");
+    const resultBox = document.getElementById("resultBox");
+
+    function renderQuestion() {
+      const q = questions[currentQuestion];
+      scenarioBox.textContent = `${q.title}：${q.text}`;
+      contextBox.textContent = q.context || "";
+      contextBox.classList.toggle("hidden", !q.context);
+      quoteBox.classList.add("hidden");
+      explanationBox.classList.add("hidden");
+      choicesBox.innerHTML = "";
+
+      q.options.forEach((option, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "choice";
+        btn.textContent = option.text;
+        btn.onclick = () => {
+          scores[option.type]++;
+          quoteBox.textContent = `“${option.quote}”`;
+          quoteBox.classList.remove("hidden");
+          explanationBox.textContent = `你选择了${option.typeName}立场的选项。`;
+          explanationBox.classList.remove("hidden");
+        };
+        choicesBox.appendChild(btn);
+      });
+    }
+
+    function prevQuestion() {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        renderQuestion();
+      }
+    }
+
+    function nextQuestion() {
+      if (currentQuestion < totalQuestions - 1) {
+        currentQuestion++;
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      document.querySelector(".scenario").classList.add("hidden");
+      document.querySelector(".context").classList.add("hidden");
+      document.querySelector(".choices").classList.add("hidden");
+      document.querySelector(".quote").classList.add("hidden");
+      document.querySelector(".explanation").classList.add("hidden");
+      resultBox.classList.remove("hidden");
+
+      const ctx = document.getElementById('philosophyChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(scores),
+          datasets: [{
+            label: '你的哲学倾向得分',
+            data: Object.values(scores),
+            backgroundColor: [
+              '#3b82f6', '#6366f1', '#10b981', '#f59e0b',
+              '#ec4899', '#8b5cf6', '#6b7280', '#22c55e'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              stepSize: 1
+            }
+          }
+        }
+      });
+    }
+
+    renderQuestion();
+  </script>
+</body>
+</html>
